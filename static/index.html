@@ -89,7 +89,10 @@
   <div class="card">
     <h2>Generate investment memo</h2>
     <p style="font-size:13px;color:#666;margin-bottom:16px;">Runs four specialized agents in sequence — market, team, financials, risk — then synthesizes a full memo. Takes 60–90 seconds.</p>
-    <button class="btn-memo" onclick="handleMemo()" id="memo-btn">Generate Investment Memo</button>
+    <div style="display:flex;gap:10px;margin-bottom:16px;">
+      <button class="btn-memo" onclick="handleMemo()" id="memo-btn" style="flex:1">Generate Investment Memo</button>
+      <button class="btn-outline" onclick="handleMemoDocx()" id="docx-btn" style="white-space:nowrap">Download .docx</button>
+    </div>
     <div class="agent-progress" id="agent-progress">
       <div class="agent-step" id="step-market"><div class="dot" id="dot-market"></div>Market agent — analyzing TAM, trends, timing</div>
       <div class="agent-step" id="step-founder"><div class="dot" id="dot-founder"></div>Founder agent — evaluating team and backgrounds</div>
@@ -203,6 +206,27 @@
     }
     btn.disabled = false;
     btn.textContent = 'Generate Investment Memo';
+  }
+
+  async function handleMemoDocx() {
+    const btn = document.getElementById('docx-btn');
+    btn.disabled = true;
+    btn.textContent = 'Generating...';
+    try {
+      const res = await fetch('/generate-memo-docx', { method: 'POST' });
+      if (!res.ok) throw new Error('Failed');
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'investment_memo.docx';
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      alert('Error generating docx: ' + e.message);
+    }
+    btn.disabled = false;
+    btn.textContent = 'Download .docx';
   }
 
   function copyMemo() {

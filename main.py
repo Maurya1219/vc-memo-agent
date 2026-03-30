@@ -1,7 +1,10 @@
+import io
+
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, StreamingResponse
 from pydantic import BaseModel
+from generate_docx import generate_memo_docx
 from rag import ingest_pdf, ingest_excel, ask_question, generate_memo
 
 app = FastAPI()
@@ -36,3 +39,18 @@ async def ask(body: Question):
 @app.post("/generate-memo")
 async def generate():
     return generate_memo()
+
+@app.post("/generate-memo-docx")
+async def generate_docx_endpoint():
+    result = generate_memo()
+    if "answer" not in result:
+        raise HTTPException(status_code=500, detail="Memo generation failed")
+
+    company_name = "Portfolio Company"
+    docx_bytes = generate_memo_docx(result["answer"], company_name)
+
+    return StreamingResponse(
+        io.BytesIO(docx_bytes),
+        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        headers={"Content-Disposition": "attachment; filename=investment_memo.docx"}
+    )
